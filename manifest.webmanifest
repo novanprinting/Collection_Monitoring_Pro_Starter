@@ -1,0 +1,13 @@
+{
+  "id":"./",
+  "name":"Collection Monitoring Pro",
+  "short_name":"Collection Pro",
+  "lang":"id-ID",
+  "start_url":"./",
+  "scope":"./",
+  "display":"standalone",
+  "orientation":"portrait",
+  "background_color":"#f4f6f9",
+  "theme_color":"#10243a",
+  "icons":[{"src":"./assets/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
