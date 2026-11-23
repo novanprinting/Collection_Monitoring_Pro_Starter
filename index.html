@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#102a43">
+  <meta name="description" content="Collection Control Pro - Professional Collection Monitoring">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png">
+  <title>Collection Control Pro</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div id="loginView" class="login-wrap">
+    <div class="login-card">
+      <div class="brand-mark">CC</div>
+      <p class="eyebrow">PROFESSIONAL EDITION</p>
+      <h1>Collection Control Pro</h1>
+      <p class="muted">Collection monitoring, recovery & portfolio control</p>
+      <form id="loginForm">
+        <label>Email<input id="email" type="email" autocomplete="username" required placeholder="email kantor"></label>
+        <label>Password<input id="password" type="password" autocomplete="current-password" required placeholder="Password"></label>
+        <button class="btn primary full" type="submit">Masuk aplikasi</button>
+      </form>
+      <p id="loginMessage" class="message"></p>
+      <p class="tiny muted">Pastikan konfigurasi Supabase sudah diisi oleh admin.</p>
+    </div>
+  </div>
+
+  <div id="appView" class="app hidden">
+    <aside class="sidebar">
+      <div class="side-brand"><div class="brand-mark small">CC</div><div><b>COLLECTION</b><span>CONTROL PRO</span></div></div>
+      <div class="user-panel"><span class="avatar" id="userInitial">A</span><div><b id="userName">Admin</b><small id="userRole">Administrator</small></div></div>
+      <nav id="navigation">
+        <button class="nav-btn active" data-page="overview">▦ <span>Dashboard</span></button>
+        <button class="nav-btn" data-page="nominatif">▤ <span>Data Nominatif</span></button>
+        <button class="nav-btn" data-page="payments">⇄ <span>Pembayaran</span></button>
+        <button class="nav-btn" data-page="assignments">♙ <span>Penugasan PIC</span></button>
+        <button class="nav-btn" data-page="targets">◎ <span>Target Recovery</span></button>
+        <button class="nav-btn" data-page="imports">⇧ <span>Riwayat Import</span></button>
+        <button class="nav-btn admin-only" data-page="users">⚙ <span>Pengaturan PIC</span></button>
+      </nav>
+      <button id="logoutBtn" class="btn logout">Keluar ↗</button>
+    </aside>
+
+    <main class="main">
+      <header class="topbar"><div><p class="eyebrow" id="pageEyebrow">OVERVIEW</p><h2 id="pageTitle">Dashboard Collection</h2></div><div class="top-actions"><span class="online-dot"></span><span id="connectionText">Terhubung</span></div></header>
+      <section id="page-overview" class="page active">
+        <div class="toolbar"><div><h3>Ringkasan portofolio</h3><p class="muted">Angka dihitung dari data nominatif dan transaksi valid.</p></div><div class="filters"><input id="filterMonth" type="month"><select id="filterPortfolio"><option value="ALL">Semua portofolio</option><option value="NPL">NPL</option><option value="WO">WO</option></select></div></div>
+        <div class="kpi-grid">
+          <article class="kpi navy"><span>Outstanding NPL</span><strong id="kpiNpl">Rp 0</strong><small>Saldo nominatif kolek 3–5</small></article>
+          <article class="kpi green"><span>Recovery periode</span><strong id="kpiRecovery">Rp 0</strong><small>Pembayaran valid</small></article>
+          <article class="kpi amber"><span>Outstanding WO</span><strong id="kpiWo">Rp 0</strong><small>Saldo portofolio WO</small></article>
+          <article class="kpi purple"><span>Target periode</span><strong id="kpiTarget">Rp 0</strong><small id="kpiAchievement">Pencapaian 0%</small></article>
+        </div>
+        <div class="panel"><div class="panel-head"><div><h3>Recovery per PIC</h3><p class="muted">Atribusi berdasarkan PIC saat tanggal transaksi.</p></div><button class="btn light" id="refreshDashboard">Perbarui</button></div><div class="table-wrap"><table><thead><tr><th>PIC</th><th>Recovery NPL</th><th>Recovery WO</th><th>Total Recovery</th><th>Target</th><th>Capaian</th></tr></thead><tbody id="picSummary"><tr><td colspan="6" class="empty">Belum ada data.</td></tr></tbody></table></div></div>
+      </section>
+
+      <section id="page-nominatif" class="page">
+        <div class="panel"><div class="panel-head"><div><h3>Import nominatif bulanan</h3><p class="muted">File sumber kredit + WO dapat digabung dalam satu Excel.</p></div></div>
+          <div class="form-grid"><label>Periode nominatif<input id="nomPeriod" type="month"></label><label>File Excel nominatif<input id="nomFile" type="file" accept=".xlsx,.xls,.csv"></label><button class="btn primary" id="previewNom">Validasi & preview</button></div>
+          <div id="nomPreview" class="preview-box muted">Pilih periode dan file, lalu jalankan validasi.</div>
+        </div>
+        <div class="panel"><div class="panel-head"><h3>Data nominatif aktif</h3><span class="pill" id="nomCount">0 rekening</span></div><div class="table-wrap"><table><thead><tr><th>PIC</th><th>No. Rekening</th><th>Nama</th><th>Kolek</th><th>Portofolio</th><th>Plafond</th><th>Baki Debet</th><th>Angsuran</th><th>Status</th></tr></thead><tbody id="nomTable"><tr><td colspan="9" class="empty">Belum ada data.</td></tr></tbody></table></div></div>
+      </section>
+
+      <section id="page-payments" class="page">
+        <div class="panel"><div class="panel-head"><div><h3>Import pembayaran harian</h3><p class="muted">Transaksi baru ditambahkan; transaksi duplikat dilewati.</p></div></div>
+          <div class="form-grid"><label>File Excel pembayaran<input id="payFile" type="file" accept=".xlsx,.xls,.csv"></label><button class="btn primary" id="previewPay">Validasi & preview</button></div>
+          <div id="payPreview" class="preview-box muted">Pilih file transaksi pembayaran.</div>
+        </div>
+        <div class="panel"><div class="panel-head"><h3>Transaksi terbaru</h3><span class="pill" id="payCount">0 transaksi</span></div><div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>ID Transaksi</th><th>No. Rekening</th><th>PIC transaksi</th><th>Portofolio</th><th>Nilai kredit</th><th>Pokok</th><th>Bunga</th></tr></thead><tbody id="payTable"><tr><td colspan="8" class="empty">Belum ada transaksi.</td></tr></tbody></table></div></div>
+      </section>
+
+      <section id="page-assignments" class="page">
+        <div class="panel"><div class="panel-head"><div><h3>Riwayat penugasan rekening</h3><p class="muted">Dipakai untuk menentukan PIC pada tanggal transaksi. Tanggal akhir kosong berarti masih aktif.</p></div></div>
+          <div class="form-grid four"><label>No. Rekening<input id="asRek" placeholder="Nomor rekening"></label><label>PIC<select id="asPic"></select></label><label>Mulai berlaku<input id="asFrom" type="date"></label><label>Akhir berlaku<input id="asTo" type="date"></label><button class="btn primary" id="saveAssignment">Simpan penugasan</button></div>
+          <div class="table-wrap"><table><thead><tr><th>No. Rekening</th><th>PIC</th><th>Mulai</th><th>Akhir</th><th>Sumber</th></tr></thead><tbody id="assignmentTable"><tr><td colspan="5" class="empty">Belum ada penugasan.</td></tr></tbody></table></div>
+        </div>
+      </section>
+
+      <section id="page-targets" class="page">
+        <div class="panel"><div class="panel-head"><div><h3>Pengaturan target recovery</h3><p class="muted">Target per PIC, portofolio, dan bulan.</p></div></div>
+          <div class="form-grid four"><label>Periode<input id="targetPeriod" type="month"></label><label>PIC<select id="targetPic"></select></label><label>Portofolio<select id="targetPortfolio"><option>NPL</option><option>WO</option></select></label><label>Target (Rp)<input id="targetAmount" type="number" min="0" step="1" placeholder="0"></label><button class="btn primary" id="saveTarget">Simpan target</button></div>
+          <div class="table-wrap"><table><thead><tr><th>Periode</th><th>PIC</th><th>Portofolio</th><th>Target</th></tr></thead><tbody id="targetTable"><tr><td colspan="4" class="empty">Belum ada target.</td></tr></tbody></table></div>
+        </div>
+      </section>
+
+      <section id="page-imports" class="page">
+        <div class="panel"><div class="panel-head"><h3>Riwayat import & validasi</h3></div><div class="table-wrap"><table><thead><tr><th>Waktu</th><th>Jenis</th><th>Nama file</th><th>Periode</th><th>Jumlah</th><th>Status</th></tr></thead><tbody id="importTable"><tr><td colspan="6" class="empty">Belum ada riwayat.</td></tr></tbody></table></div></div>
+      </section>
+
+      <section id="page-users" class="page admin-only">
+        <div class="panel"><div class="panel-head"><div><h3>Master PIC</h3><p class="muted">PIC awal: UUD, ADI, RIZAL, RADIT, NONAME. Admin dapat menambah PIC sesuai nominatif aktual.</p></div></div>
+          <div class="form-grid"><label>Kode PIC<input id="newPicCode" placeholder="Contoh: DARYONO"></label><label>Nama PIC<input id="newPicName" placeholder="Nama petugas"></label><button class="btn primary" id="addPic">Tambah PIC</button></div>
+          <div class="table-wrap"><table><thead><tr><th>Kode</th><th>Nama</th><th>Status</th></tr></thead><tbody id="picMasterTable"></tbody></table></div>
+        </div>
+      </section>
+      <footer>Collection Control Pro <span>•</span> Professional Edition</footer>
+    </main>
+  </div>
+  <div id="toast" class="toast"></div>
+  <script src="./config.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
